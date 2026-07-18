@@ -19,28 +19,23 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '17'
-        # Cache ko hata diya hai taaki build bina kisi validation error ke force-start ho sake
 
-    - name: Build with Gradle
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      # Yeh action runner par custom Gradle distribution environment allocate kar dega
+
+    - name: Initialize Missing Gradle Wrapper
       run: |
-        # Pure workspace me check karne ke liye ki gradlew wrapper kahan chhipa hai
-        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-        
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "Error: gradlew file pure project me kahin nahi mili!"
-          exit 1
-        fi
-        
-        DIR_PATH=$(dirname "$GRADLEW_PATH")
-        cd "$DIR_PATH"
-        
-        echo "Gradle wrapper found at: $GRADLEW_PATH"
+        # Agar gradlew nahi hai, to system gradle se wrapper generate karein
+        gradle wrapper --gradle-version 8.2
         chmod +x gradlew
-        ./gradlew assembleDebug
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
 
     - name: Upload Generated APK
       uses: actions/upload-artifact@v4
       with:
         name: Cyber-Booster-Debug-APK
         path: "**/build/outputs/apk/debug/*-debug.apk"
-
+        
