@@ -20,17 +20,28 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
         cache: 'gradle'
+        # AGAR CODE SUBFOLDER ME HAI: Yahan apne subfolder ka naam likhein (e.g., './my-subfolder')
+        # Agar root par hi hai aur fir bhi error hai, to cache ko temporarily false kar sakte hain.
+        cache-dependency-path: |
+          **/*.gradle*
+          **/gradle-wrapper.properties
 
     - name: Grant Execute Permission to Gradle
-      run: chmod +x gradlew
-      # Agar aapke zip me gradlew script nahi hai to niche wala step local dependencies ko build karega
+      # Yahan bhi agar subfolder hai to 'chmod +x ./subfolder/gradlew' karein
+      run: |
+        if [ -f gradlew ]; then
+          chmod +x gradlew
+        fi
 
     - name: Build Debug APK
+      # Agar subfolder hai to './gradlew' ki jagah './subfolder/gradlew' run karein
       run: ./gradlew assembleDebug
 
     - name: Upload Generated APK
       uses: actions/upload-artifact@v4
       with:
         name: Cyber-Booster-Debug-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        # Agar path alag hai to uske hisab se update karein
+        path: |
+          **/build/outputs/apk/debug/*-debug.apk
 
