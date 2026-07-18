@@ -27,21 +27,26 @@ jobs:
       run: |
         echo "=== Creating Android Project Framework ==="
         
-        # 1. Base Structure Generate Karna
+        # 1. All Base Structures Generate Karna (Res directories included)
         mkdir -p app/src/main/java/com/gameturbo/redmagic
         mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/mipmap-hdpi
+        mkdir -p app/src/main/res/mipmap-mdpi
+        mkdir -p app/src/main/res/mipmap-xhdpi
+        mkdir -p app/src/main/res/mipmap-xxhdpi
+        mkdir -p app/src/main/res/mipmap-xxxhdpi
         
-        # 🔥 FIX: AndroidX Properties File Create Karna (Isse checkDebugAarMetadata Error Khatam Hogi)
+        # 2. Fix AndroidX Properties File
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
         
-        # 2. Root settings.gradle Engine
+        # 3. Root settings.gradle Engine
         echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
         echo "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }" >> settings.gradle
         echo "rootProject.name = 'Cyber-Booster'" >> settings.gradle
         echo "include ':app'" >> settings.gradle
 
-        # 3. Root build.gradle
+        # 4. Root build.gradle
         cat <<EOF > build.gradle
         buildscript {
             repositories { google(); mavenCentral() }
@@ -53,7 +58,7 @@ jobs:
         }
         EOF
 
-        # 4. App Module build.gradle (Jetpack Compose Loaded)
+        # 5. App Module build.gradle (Jetpack Compose Loaded)
         cat <<EOF > app/build.gradle
         plugins {
             id 'com.android.application'
@@ -98,7 +103,7 @@ jobs:
         }
         EOF
 
-        # 5. Gaming forced Landscape Manifest Setup (Tedha Look Framework)
+        # 6. Gaming forced Landscape Manifest Setup
         cat <<EOF > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -121,19 +126,39 @@ jobs:
         </manifest>
         EOF
 
-        # 6. Basic Theme definitions to prevent crashes
+        # 7. Basic Theme definitions and Colors
         echo '<resources><color name="purple_200">#FFBB86FC</color></resources>' > app/src/main/res/values/colors.xml
 
-        # 7. AI Studio wale MainActivity ko sahi target location par inject karna
+        # 🔥 FIX: XML based default Vector Launcher Icon generate karna taaki AAPT crash na ho
+        cat <<EOF > app/src/main/res/mipmap-hdpi/ic_launcher.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path
+                android:fillColor="#00FFCC"
+                android:pathData="M0,0h108v108h-108z"/>
+        </vector>
+        EOF
+        
+        # Baaki saare density folders me link generate karna fallback ke liye
+        cp app/src/main/res/mipmap-hdpi/ic_launcher.xml app/src/main/res/mipmap-mdpi/ic_launcher.xml
+        cp app/src/main/res/mipmap-hdpi/ic_launcher.xml app/src/main/res/mipmap-xhdpi/ic_launcher.xml
+        cp app/src/main/res/mipmap-hdpi/ic_launcher.xml app/src/main/res/mipmap-xxhdpi/ic_launcher.xml
+        cp app/src/main/res/mipmap-hdpi/ic_launcher.xml app/src/main/res/mipmap-xxxhdpi/ic_launcher.xml
+
+        # 8. AI Studio wale MainActivity ko injection point par set karna
         if [ -f MainActivity.kt ]; then
             cp MainActivity.kt app/src/main/java/com/gameturbo/redmagic/MainActivity.kt
         elif [ -f app/src/main/java/com/gameturbo/redmagic/MainActivity.kt ]; then
             echo "MainActivity already in position."
         else
-            echo "Warning: Temporary placeholder generated. Make sure your code file is named MainActivity.kt"
+            echo "Warning: Placeholder generated."
         fi
 
-        # 8. Setup fresh Gradle Wrapper
+        # 9. Setup fresh Gradle Wrapper
         gradle wrapper --gradle-version 8.2
         chmod +x gradlew
 
@@ -145,4 +170,4 @@ jobs:
       with:
         name: Cyber-Booster-Handheld-APK
         path: "app/build/outputs/apk/debug/app-debug.apk"
-        
+
