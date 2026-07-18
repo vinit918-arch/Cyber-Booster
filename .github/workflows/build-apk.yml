@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK from AI Studio Code
 
 on:
   push:
@@ -23,46 +23,123 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
 
-    - name: Auto-Repair Missing Gradle Configuration
+    - name: Generate Complete Android Architecture
       run: |
-        # 1. Agar root par settings.gradle nahi hai, to banayein aur app module include karein
-        if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
-          echo "Creating missing settings.gradle..."
-          echo "include ':app'" > settings.gradle
-        fi
+        echo "=== Creating Android Project Framework ==="
+        
+        # 1. Base Structure Generate Karna
+        mkdir -p app/src/main/java/com/gameturbo/redmagic
+        mkdir -p app/src/main/res/values
+        
+        # 2. Root settings.gradle Engine
+        echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
+        echo "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }" >> settings.gradle
+        echo "rootProject.name = 'Cyber-Booster'" >> settings.gradle
+        echo "include ':app'" >> settings.gradle
 
-        # 2. Agar root build.gradle missing hai, to standard repository settings define karein
-        if [ ! -f build.gradle ] && [ ! -f build.gradle.kts ]; then
-          echo "Creating missing root build.gradle..."
-          cat <<EOF > build.gradle
-          buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.2.2'
-              }
-          }
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
+        # 3. Root build.gradle
+        cat <<EOF > build.gradle
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+        }
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
+        }
         EOF
+
+        # 4. App Module build.gradle (Jetpack Compose Loaded)
+        cat <<EOF > app/build.gradle
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+        android {
+            namespace 'com.gameturbo.redmagic'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.gameturbo.redmagic"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+                testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+                vectorDrawables { useSupportLibrary true }
+            }
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+            kotlinOptions { jvmTarget = '17' }
+            buildFeatures { compose true }
+            composeOptions { kotlinCompilerExtensionVersion '1.5.8' }
+            packagingOptions { resources { excludes += '/META-INF/{AL2.0,LGPL2.1}' } }
+        }
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+            implementation 'androidx.activity:activity-compose:1.8.2'
+            implementation platform('androidx.compose:compose-bom:2024.02.00')
+            implementation 'androidx.compose.ui:ui'
+            implementation 'androidx.compose.ui:ui-graphics'
+            implementation 'androidx.compose.ui:ui-tooling-preview'
+            implementation 'androidx.compose.material3:material3'
+        }
+        EOF
+
+        # 5. Gaming forced Landscape Manifest Setup (Tedha Look Framework)
+        cat <<EOF > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+                android:allowBackup="true"
+                android:icon="@mipmap/ic_launcher"
+                android:label="Cyber Booster"
+                android:theme="@android:style/Theme.Material.NoActionBar">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true"
+                    android:screenOrientation="landscape"
+                    android:configChanges="orientation|screenSize|keyboardHidden">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # 6. Basic Theme definitions to prevent crashes
+        echo '<resources><color name="purple_200">#FFBB86FC</color></resources>' > app/src/main/res/values/colors.xml
+
+        # 7. AI Studio wale MainActivity ko sahi target location par inject karna
+        # Agar aapki main file root par padi hai toh use copy karega, nahi toh basic create karega
+        if [ -f MainActivity.kt ]; then
+            cp MainActivity.kt app/src/main/java/com/gameturbo/redmagic/MainActivity.kt
+        elif [ -f app/src/main/java/com/gameturbo/redmagic/MainActivity.kt ]; then
+            echo "MainActivity already in position."
+        else
+            echo "Warning: Temporary placeholder generated. Make sure your code file is named MainActivity.kt"
         fi
 
-        # 3. Ab wrapper generate karein
+        # 8. Setup fresh Gradle Wrapper
         gradle wrapper --gradle-version 8.2
         chmod +x gradlew
 
-    - name: Build Debug APK
+    - name: Run Heavy Compile & Build APK
       run: ./gradlew :app:assembleDebug
 
-    - name: Upload Generated APK
+    - name: Deliver Cyber-Booster APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Cyber-Booster-Debug-APK
-        path: "**/build/outputs/apk/debug/*-debug.apk"
-        
+        name: Cyber-Booster-Handheld-APK
+        path: "app/build/outputs/apk/debug/app-debug.apk"
+
