@@ -19,29 +19,28 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '17'
-        cache: 'gradle'
-        # AGAR CODE SUBFOLDER ME HAI: Yahan apne subfolder ka naam likhein (e.g., './my-subfolder')
-        # Agar root par hi hai aur fir bhi error hai, to cache ko temporarily false kar sakte hain.
-        cache-dependency-path: |
-          **/*.gradle*
-          **/gradle-wrapper.properties
+        # Cache ko hata diya hai taaki build bina kisi validation error ke force-start ho sake
 
-    - name: Grant Execute Permission to Gradle
-      # Yahan bhi agar subfolder hai to 'chmod +x ./subfolder/gradlew' karein
+    - name: Build with Gradle
       run: |
-        if [ -f gradlew ]; then
-          chmod +x gradlew
+        # Pure workspace me check karne ke liye ki gradlew wrapper kahan chhipa hai
+        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+        
+        if [ -z "$GRADLEW_PATH" ]; then
+          echo "Error: gradlew file pure project me kahin nahi mili!"
+          exit 1
         fi
-
-    - name: Build Debug APK
-      # Agar subfolder hai to './gradlew' ki jagah './subfolder/gradlew' run karein
-      run: ./gradlew assembleDebug
+        
+        DIR_PATH=$(dirname "$GRADLEW_PATH")
+        cd "$DIR_PATH"
+        
+        echo "Gradle wrapper found at: $GRADLEW_PATH"
+        chmod +x gradlew
+        ./gradlew assembleDebug
 
     - name: Upload Generated APK
       uses: actions/upload-artifact@v4
       with:
         name: Cyber-Booster-Debug-APK
-        # Agar path alag hai to uske hisab se update karein
-        path: |
-          **/build/outputs/apk/debug/*-debug.apk
+        path: "**/build/outputs/apk/debug/*-debug.apk"
 
