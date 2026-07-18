@@ -22,16 +22,43 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
-      # Yeh action runner par custom Gradle distribution environment allocate kar dega
 
-    - name: Initialize Missing Gradle Wrapper
+    - name: Auto-Repair Missing Gradle Configuration
       run: |
-        # Agar gradlew nahi hai, to system gradle se wrapper generate karein
+        # 1. Agar root par settings.gradle nahi hai, to banayein aur app module include karein
+        if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
+          echo "Creating missing settings.gradle..."
+          echo "include ':app'" > settings.gradle
+        fi
+
+        # 2. Agar root build.gradle missing hai, to standard repository settings define karein
+        if [ ! -f build.gradle ] && [ ! -f build.gradle.kts ]; then
+          echo "Creating missing root build.gradle..."
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+        EOF
+        fi
+
+        # 3. Ab wrapper generate karein
         gradle wrapper --gradle-version 8.2
         chmod +x gradlew
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: ./gradlew :app:assembleDebug
 
     - name: Upload Generated APK
       uses: actions/upload-artifact@v4
